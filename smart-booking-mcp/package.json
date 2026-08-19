@@ -1,0 +1,12 @@
+{
+  "name": "smart-booking-mcp",
+  "version": "1.0.0",
+  "description": "An n8n MCP server that books meetings around the user's calendar and prayer times",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/build-workflow.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

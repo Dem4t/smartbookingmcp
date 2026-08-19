@@ -1,0 +1,461 @@
+{
+  "name": "Smart Booking MCP — prayer aware",
+  "nodes": [
+    {
+      "parameters": {
+        "color": 4,
+        "width": 900,
+        "height": 300,
+        "content": "## 1 — MCP surface\nThese three tools are what an MCP client (Claude) sees.\n`find_available_slots` runs the whole engine below in a single call, so the model never does date maths itself."
+      },
+      "id": "c0000000-0000-4000-8000-00000000000a",
+      "name": "Note a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "path": "smart-booking"
+      },
+      "id": "c0000000-0000-4000-8000-000000000001",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        100,
+        -120
+      ],
+      "webhookId": "c0000000-0000-4000-8000-0000000000ff"
+    },
+    {
+      "parameters": {
+        "name": "find_available_slots",
+        "description": "Returns bookable meeting slots already filtered against the user's calendar AND against prayer times (Fajr, Dhuhr, Asr, Maghrib, Isha, plus a wide Jumu'ah window on Fridays), with buffers around existing meetings. ALWAYS call this before book_meeting. Never invent a time — only offer times present in the returned `slots` array.",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', 'The day to check, format YYYY-MM-DD. Leave empty to scan the next working days.', 'string', \"\") }}",
+            "duration_minutes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('duration_minutes', 'How long the meeting should be, in minutes.', 'number', 30) }}",
+            "days_to_scan": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('days_to_scan', 'How many days ahead to scan. Leave 0 unless the user asked for a range — 0 means one day when a date is given, otherwise the next few working days.', 'number', 0) }}",
+            "day_start_hour": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('day_start_hour', 'Earliest acceptable hour, 24h clock.', 'number', 9) }}",
+            "day_end_hour": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('day_end_hour', 'Latest acceptable hour, 24h clock.', 'number', 18) }}",
+            "calendar_id": "abdulrhman.a.otb@gmail.com"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "duration_minutes",
+              "displayName": "duration_minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "days_to_scan",
+              "displayName": "days_to_scan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "day_start_hour",
+              "displayName": "day_start_hour",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "day_end_hour",
+              "displayName": "day_end_hour",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "calendar_id",
+              "displayName": "calendar_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "c0000000-0000-4000-8000-000000000002",
+      "name": "find_available_slots",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -300,
+        60
+      ],
+      "notesInFlow": true,
+      "notes": "Calls this same workflow via $workflow.id"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Books a meeting on the user's calendar and creates a Google Meet link. Only use start/end values that came back from find_available_slots. Times must be full ISO 8601 with the +03:00 offset.",
+        "calendar": {
+          "__rl": true,
+          "value": "abdulrhman.a.otb@gmail.com",
+          "mode": "list",
+          "cachedResultName": "abdulrhman.a.otb@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('start_time', 'Start of the meeting, ISO 8601 e.g. 2026-08-25T13:30:00+03:00', 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('end_time', 'End of the meeting, ISO 8601 e.g. 2026-08-25T14:00:00+03:00', 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('title', 'Short meeting title.', 'string') }}",
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('agenda', 'Agenda or notes for the invite body.', 'string', \"\") }}",
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendee_emails', 'Comma separated email addresses of the guests.', 'string', \"\") }}"
+          ],
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          }
+        }
+      },
+      "id": "c0000000-0000-4000-8000-000000000003",
+      "name": "book_meeting",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        100,
+        60
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KEa5D2INTqGQ9StC",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lists everything already on the user's calendar from the start of today through the next 7 days. Use it to answer 'what does my day look like' or to double-check a booking that was just made.",
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "abdulrhman.a.otb@gmail.com",
+          "mode": "list",
+          "cachedResultName": "abdulrhman.a.otb@gmail.com"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $now.setZone('Asia/Riyadh').startOf('day').toISO() }}",
+          "timeMax": "={{ $now.setZone('Asia/Riyadh').plus(7, 'days').endOf('day').toISO() }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "c0000000-0000-4000-8000-000000000004",
+      "name": "list_my_schedule",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        340,
+        60
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KEa5D2INTqGQ9StC",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "color": 7,
+        "width": 1420,
+        "height": 320,
+        "content": "## 2 — Availability engine\n`find_available_slots` re-enters the workflow here.\nCalendar events and prayer times are gathered, then **Compute Slots** subtracts busy blocks, prayer windows and buffers from the working day and returns only slots that survive."
+      },
+      "id": "c0000000-0000-4000-8000-00000000000b",
+      "name": "Note b",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "date"
+            },
+            {
+              "name": "duration_minutes",
+              "type": "number"
+            },
+            {
+              "name": "days_to_scan",
+              "type": "number"
+            },
+            {
+              "name": "day_start_hour",
+              "type": "number"
+            },
+            {
+              "name": "day_end_hour",
+              "type": "number"
+            },
+            {
+              "name": "calendar_id"
+            }
+          ]
+        }
+      },
+      "id": "c0000000-0000-4000-8000-000000000005",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -300,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══ CONFIG ═══════════════════════════════════════════════════════\nconst CONFIG = {\n  calendar_id:      'abdulrhman.a.otb@gmail.com', // '' or 'primary' = the account's default calendar\n  timezone_offset:  '+03:00',                     // Saudi Arabia, no DST\n  city:             'Riyadh',\n  country:          'SA',\n  prayer_method:    4,                            // 4 = Umm Al-Qura\n  duration_minutes: 30,\n  day_start_hour:   9,\n  day_end_hour:     18,\n  buffer_minutes:   10,                           // breathing room around existing meetings\n  max_results:      12,\n  days_to_scan:     5,\n  skip_weekend:     true,                         // Friday + Saturday\n};\n\n// ── Read the tool's arguments, apply defaults, work out which days to scan ──\nconst raw = $input.first().json || {};\n// When the tool is called with a free-text `query` instead of typed fields,\n// try to read a JSON object out of it before falling back to defaults.\nlet p = raw;\nif (typeof raw.query === 'string' && raw.query.trim().startsWith('{')) {\n  try { p = Object.assign({}, raw, JSON.parse(raw.query)); } catch (e) { /* keep raw */ }\n}\nconst val = (v, d) => (v === undefined || v === null || v === '' ) ? d : v;\nconst num = (v, d) => { if (v === undefined || v === null || v === '') return d; const n = Number(v); return Number.isFinite(n) ? n : d; };\n\nconst offset       = val(p.timezone_offset, CONFIG.timezone_offset);\nconst city         = val(p.city, CONFIG.city);\nconst country      = val(p.country, CONFIG.country);\nconst method       = num(p.prayer_method, CONFIG.prayer_method);          // 4 = Umm Al-Qura (KSA)\nconst calendarId   = val(p.calendar_id, CONFIG.calendar_id);\nconst duration     = num(p.duration_minutes, CONFIG.duration_minutes);\nconst dayStartHour = num(p.day_start_hour, CONFIG.day_start_hour);\nconst dayEndHour   = num(p.day_end_hour, CONFIG.day_end_hour);\nconst buffer       = num(p.buffer_minutes, CONFIG.buffer_minutes);\nconst maxResults   = num(p.max_results, CONFIG.max_results);\nconst skipWeekend  = val(p.skip_weekend, CONFIG.skip_weekend) !== false && val(p.skip_weekend, CONFIG.skip_weekend) !== 'false';\n\nconst pad = n => String(n).padStart(2, '0');\nconst offMin = (() => { const m = String(offset).match(/([+-])(\\d{2}):?(\\d{2})/); return m ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +m[3]) : 0; })();\nconst fmt = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;\n\nconst todayLocal = fmt(new Date(Date.now() + offMin * 60000));\nconst startDate  = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(p.date || '')) ? p.date : todayLocal;\nconst explicit   = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(p.date || ''));\n// 0 (or missing) means \"decide for me\": one day when a date was named, a scan otherwise.\nconst asked      = num(p.days_to_scan, 0);\nconst scan       = asked > 0 ? Math.min(asked, 14) : (explicit ? 1 : CONFIG.days_to_scan);\n\nconst days = [];\nlet cur = Date.parse(startDate + 'T12:00:00Z');\nlet guard = 0;\nwhile (days.length < scan && guard++ < 40) {\n  const d = new Date(cur);\n  const dow = d.getUTCDay();                       // 5 = Friday, 6 = Saturday\n  const isWeekend = (dow === 5 || dow === 6);\n  // A weekend day is skipped unless the caller named that exact date.\n  if (!(skipWeekend && isWeekend && !(explicit && fmt(d) === startDate))) {\n    days.push({ date: fmt(d), date_ddmmyyyy: `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}` });\n  }\n  cur += 86400000;\n}\n\nconst rangeStart = days[0].date + 'T00:00:00' + offset;\nconst last = days[days.length - 1].date;\nconst rangeEnd = fmt(new Date(Date.parse(last + 'T12:00:00Z') + 86400000)) + 'T00:00:00' + offset;\n\nreturn [{ json: {\n  offset, city, country, method, calendarId,\n  duration_minutes: duration, day_start_hour: dayStartHour, day_end_hour: dayEndHour,\n  buffer_minutes: buffer, max_results: maxResults,\n  attendee_emails: val(p.attendee_emails, ''),\n  days, range_start: rangeStart, range_end: rangeEnd,\n} }];\n"
+      },
+      "id": "c0000000-0000-4000-8000-000000000006",
+      "name": "Prep Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        380
+      ],
+      "notesInFlow": true,
+      "notes": "Defaults + which days to scan"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $json.calendarId }}",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $json.range_start }}",
+          "timeMax": "={{ $json.range_end }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "c0000000-0000-4000-8000-000000000007",
+      "name": "Get Busy Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        140,
+        380
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KEa5D2INTqGQ9StC",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── One item per day, so the prayer-times request runs once per day ──\nreturn $('Prep Request').first().json.days.map(d => ({ json: d }));\n"
+      },
+      "id": "c0000000-0000-4000-8000-000000000008",
+      "name": "Expand Days",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        380
+      ],
+      "notesInFlow": true,
+      "notes": "One item per day"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.aladhan.com/v1/timingsByCity/{{ $json.date_ddmmyyyy }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "city",
+              "value": "={{ $('Prep Request').first().json.city }}"
+            },
+            {
+              "name": "country",
+              "value": "={{ $('Prep Request').first().json.country }}"
+            },
+            {
+              "name": "method",
+              "value": "={{ $('Prep Request').first().json.method }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c0000000-0000-4000-8000-000000000009",
+      "name": "Get Prayer Times",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        380
+      ],
+      "notesInFlow": true,
+      "notes": "Aladhan API — no key needed"
+    },
+    {
+      "parameters": {
+        "jsCode": "/* ── Prayer-aware availability engine ─────────────────────────────\n   Pure function so it can be unit-tested outside n8n.            */\n\nconst PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];\nconst DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n\nfunction pad(n){ return String(n).padStart(2,'0'); }\n\n// \"04:12 (+03)\" -> 252\nfunction hhmmToMin(s){\n  const m = String(s).match(/(\\d{1,2}):(\\d{2})/);\n  return m ? (+m[1])*60 + (+m[2]) : null;\n}\nfunction minToHHMM(m){ return pad(Math.floor(m/60)) + ':' + pad(m%60); }\nfunction iso(dateStr, min, offset){\n  return `${dateStr}T${minToHHMM(((min%1440)+1440)%1440)}:00${offset}`;\n}\n// offset \"+03:00\" -> 180\nfunction offsetMin(off){\n  const m = String(off).match(/([+-])(\\d{2}):?(\\d{2})/);\n  if(!m) return 0;\n  return (m[1]==='-'?-1:1) * ((+m[2])*60 + (+m[3]));\n}\n// absolute instant -> {date:'YYYY-MM-DD', min:number} in the target offset\nfunction toLocal(isoStr, off){\n  const t = Date.parse(isoStr);\n  if (Number.isNaN(t)) return null;\n  const d = new Date(t + offsetMin(off)*60000);\n  return {\n    date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`,\n    min: d.getUTCHours()*60 + d.getUTCMinutes(),\n    abs: t,\n  };\n}\nfunction dowOf(dateStr, off){\n  return new Date(Date.parse(dateStr + 'T12:00:00' + off)).getUTCDay();\n}\nfunction mergeBlocks(blocks){\n  const s = blocks.filter(b => b.end > b.start).sort((a,b)=> a.start-b.start);\n  const out = [];\n  for (const b of s){\n    const last = out[out.length-1];\n    if (last && b.start <= last.end){\n      last.end = Math.max(last.end, b.end);\n      if (last.labels.indexOf(b.label) === -1) last.labels.push(b.label);\n    } else {\n      out.push({start:b.start, end:b.end, labels:[b.label]});\n    }\n  }\n  return out;\n}\n\nfunction computeAvailability(cfg){\n  const {\n    days,                       // ['YYYY-MM-DD', ...]\n    offset = '+03:00',\n    dayStartHour = 9,\n    dayEndHour = 18,\n    durationMinutes = 30,\n    bufferMinutes = 10,\n    granularity = 15,\n    prayerBefore = 5,\n    prayerAfter = 25,\n    jumuahBefore = 45,\n    jumuahAfter = 75,\n    skipPrayers = [],           // e.g. ['Fajr','Isha'] if outside work hours anyway\n    maxResults = 12,\n    events = [],                // raw Google Calendar events\n    prayerByDate = {},          // { 'YYYY-MM-DD': {Fajr:'04:12', ...} }\n  } = cfg;\n\n  const winStart = dayStartHour*60, winEnd = dayEndHour*60;\n  const slots = [], report = [];\n\n  for (const date of days){\n    const dow = dowOf(date, offset);\n    const blocks = [];\n\n    // ── prayer blocks ──────────────────────────────────────────\n    const timings = prayerByDate[date] || {};\n    const prayerWindows = [];\n    for (const p of PRAYERS){\n      if (skipPrayers.indexOf(p) !== -1) continue;\n      const t = hhmmToMin(timings[p]);\n      if (t === null) continue;\n      const isJumuah = (dow === 5 && p === 'Dhuhr');\n      const b = t - (isJumuah ? jumuahBefore : prayerBefore);\n      const e = t + (isJumuah ? jumuahAfter : prayerAfter);\n      if (e <= winStart || b >= winEnd) continue;       // outside working hours\n      const label = isJumuah ? 'Jumuah' : p;\n      blocks.push({start:b, end:e, label});\n      prayerWindows.push({name: label, adhan: minToHHMM(t), blocked: `${minToHHMM(Math.max(b,0))}–${minToHHMM(Math.min(e,1439))}`});\n    }\n\n    // ── calendar blocks ────────────────────────────────────────\n    let allDay = null;\n    for (const ev of events){\n      if (!ev || ev.status === 'cancelled') continue;\n      if (ev.transparency === 'transparent') continue;\n      const me = (ev.attendees || []).find(a => a && a.self);\n      if (me && me.responseStatus === 'declined') continue;\n\n      if (ev.start && ev.start.date && !ev.start.dateTime){       // all-day\n        const s = ev.start.date, e = ev.end && ev.end.date ? ev.end.date : s;\n        if (date >= s && date < e){ allDay = ev.summary || 'All-day event'; }\n        continue;\n      }\n      const s = toLocal(ev.start && ev.start.dateTime, offset);\n      const e = toLocal(ev.end && ev.end.dateTime, offset);\n      if (!s || !e) continue;\n      let a = s.min, b = e.min;\n      if (s.date !== date && e.date !== date) continue;\n      if (s.date !== date) a = 0;                                  // spills in from previous day\n      if (e.date !== date) b = 1440;                               // spills into next day\n      blocks.push({start: a - bufferMinutes, end: b + bufferMinutes, label: ev.summary || 'Busy'});\n    }\n\n    if (allDay){\n      report.push({date, weekday: DOW[dow], available: false, reason: `Blocked all day: ${allDay}`, prayer_windows: prayerWindows});\n      continue;\n    }\n\n    const merged = mergeBlocks(blocks);\n    const daySlots = [];\n    let cursor = winStart;\n    const gaps = [];\n    for (const b of merged.concat([{start: winEnd, end: winEnd, labels:[]}])){\n      if (b.start > cursor) gaps.push({start: cursor, end: Math.min(b.start, winEnd)});\n      cursor = Math.max(cursor, b.end);\n      if (cursor >= winEnd) break;\n    }\n    if (cursor < winEnd) gaps.push({start: cursor, end: winEnd});\n\n    for (const g of gaps){\n      let s = Math.ceil(Math.max(g.start, winStart)/granularity)*granularity;\n      let taken = 0;\n      while (s + durationMinutes <= Math.min(g.end, winEnd) && taken < 3){\n        daySlots.push({\n          date,\n          weekday: DOW[dow],\n          start: iso(date, s, offset),\n          end: iso(date, s + durationMinutes, offset),\n          local: `${minToHHMM(s)}–${minToHHMM(s+durationMinutes)}`,\n        });\n        s += Math.max(granularity, durationMinutes);\n        taken++;\n      }\n    }\n\n    report.push({\n      date, weekday: DOW[dow],\n      available: daySlots.length > 0,\n      free_slots_found: daySlots.length,\n      busy_blocks: merged.map(b => `${minToHHMM(Math.max(b.start,0))}–${minToHHMM(Math.min(b.end,1439))} (${b.labels.join(', ')})`),\n      prayer_windows: prayerWindows,\n    });\n    slots.push(...daySlots);\n  }\n\n  return {\n    duration_minutes: durationMinutes,\n    working_hours: `${pad(dayStartHour)}:00–${pad(dayEndHour)}:00`,\n    timezone_offset: offset,\n    slots: slots.slice(0, maxResults),\n    total_found: slots.length,\n    days: report,\n  };\n}\n\n\n// ── Wire n8n data into the engine ───────────────────────────────\nconst cfg = $('Prep Request').first().json;\n\nconst prayerByDate = {};\nfor (const item of $input.all()) {\n  const d = item.json && item.json.data;\n  if (!d || !d.timings) continue;\n  const g = d.date && d.date.gregorian && d.date.gregorian.date;   // 'DD-MM-YYYY'\n  if (!g) continue;\n  const [dd, mm, yyyy] = g.split('-');\n  prayerByDate[`${yyyy}-${mm}-${dd}`] = d.timings;\n}\n\nconst events = $('Get Busy Events').all()\n  .map(i => i.json)\n  .filter(e => e && (e.start || e.id));\n\nconst result = computeAvailability({\n  days: cfg.days.map(d => d.date),\n  offset: cfg.offset,\n  dayStartHour: cfg.day_start_hour,\n  dayEndHour: cfg.day_end_hour,\n  durationMinutes: cfg.duration_minutes,\n  bufferMinutes: cfg.buffer_minutes,\n  maxResults: cfg.max_results,\n  events,\n  prayerByDate,\n});\n\nresult.calendar_id = cfg.calendarId;\nresult.instructions_for_the_assistant =\n  'Offer the user 2-3 of these slots in plain language. Never invent a time that is not in \"slots\". ' +\n  'When the user picks one, call book_meeting with that exact start and end value.';\n\nreturn [{ json: result }];\n"
+      },
+      "id": "c0000000-0000-4000-8000-00000000000c",
+      "name": "Compute Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        380
+      ],
+      "notesInFlow": true,
+      "notes": "The actual decision"
+    }
+  ],
+  "connections": {
+    "find_available_slots": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "book_meeting": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_my_schedule": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prep Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Request": {
+      "main": [
+        [
+          {
+            "node": "Get Busy Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Busy Events": {
+      "main": [
+        [
+          {
+            "node": "Expand Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Days": {
+      "main": [
+        [
+          {
+            "node": "Get Prayer Times",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Prayer Times": {
+      "main": [
+        [
+          {
+            "node": "Compute Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
